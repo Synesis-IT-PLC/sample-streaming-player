@@ -41,9 +41,15 @@ function App() {
 
 ## Dependencies
 
-- `react`
-- `prop-types`
-- `hls.js`
+```
+"dependencies": {
+  "hls.js": "^1.6.15",
+  "prop-types": "^15.8.1",
+  "react": "^19.2.3",
+  "react-dom": "^19.2.3",
+  "react-scripts": "5.0.1"
+}
+```
 
 ## Configuration
 
