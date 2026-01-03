@@ -1,5 +1,5 @@
 // Configuration
-const BACKEND_URL = 'https://streamrelay.convay.com/cast/api';
+const BACKEND_URL = 'https://your-backend-url.com/api';
 const PLAYLIST_ACCESS_URL = `${BACKEND_URL}/test/access`;
 const PLAYLIST_PARAMS = {
   stream_id: 'stream_id',
