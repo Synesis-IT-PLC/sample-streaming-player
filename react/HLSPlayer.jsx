@@ -52,6 +52,26 @@ const selectStyle = {
   minWidth: '120px',
 };
 
+const syncButtonStyle = {
+  position: 'absolute',
+  top: '10px',
+  left: '10px',
+  zIndex: 20,
+  backgroundColor: 'rgba(0, 0, 0, 0.7)',
+  color: '#fff',
+  border: '1px solid rgba(255, 255, 255, 0.2)',
+  borderRadius: '6px',
+  padding: '8px 16px',
+  fontSize: '14px',
+  fontWeight: 500,
+  cursor: 'pointer',
+  outline: 'none',
+  transition: 'all 0.2s ease',
+  backdropFilter: 'blur(4px)',
+};
+
+const SYNC_OFFSET_SECONDS = 10;
+
 export default function HLSPlayer({ streamUrl, tokenRefreshMethod, abrEnabled = true, playlistRefreshThreshold = 15 }) {
   const videoRef = useRef(null);
   const hlsRef = useRef(null);
@@ -195,8 +215,47 @@ export default function HLSPlayer({ streamUrl, tokenRefreshMethod, abrEnabled = 
     }
   };
 
+  const handleSync = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    
+    // Wait for metadata to be loaded to get duration
+    if (video.readyState >= 2) {
+      const duration = video.duration;
+      if (isFinite(duration) && duration > SYNC_OFFSET_SECONDS) {
+        video.currentTime = duration - SYNC_OFFSET_SECONDS;
+        video.play().catch(() => {});
+      }
+    } else {
+      // If metadata not loaded yet, wait for it
+      const onLoadedMetadata = () => {
+        const duration = video.duration;
+        if (isFinite(duration) && duration > SYNC_OFFSET_SECONDS) {
+          video.currentTime = duration - SYNC_OFFSET_SECONDS;
+          video.play().catch(() => {});
+        }
+        video.removeEventListener('loadedmetadata', onLoadedMetadata);
+      };
+      video.addEventListener('loadedmetadata', onLoadedMetadata);
+    }
+  };
+
   return (
     <div style={containerStyle}>
+      <button
+        onClick={handleSync}
+        style={syncButtonStyle}
+        onMouseEnter={(e) => {
+          e.target.style.backgroundColor = 'rgba(0, 0, 0, 0.85)';
+          e.target.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+        }}
+        onMouseLeave={(e) => {
+          e.target.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+          e.target.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+        }}
+      >
+        Sync
+      </button>
       {levels.length > 0 && (
         <div style={qualitySelectorStyle}>
           <label htmlFor="quality-select" style={labelStyle}>Quality:</label>
