@@ -25,16 +25,16 @@ const qualitySelectorStyle = {
   zIndex: 20,
   display: 'flex',
   alignItems: 'center',
-  gap: '8px',
+  gap: '6px',
   backgroundColor: 'rgba(0, 0, 0, 0.7)',
-  padding: '8px 12px',
+  padding: '4px 8px',
   borderRadius: '6px',
   backdropFilter: 'blur(4px)',
 };
 
 const labelStyle = {
   color: '#fff',
-  fontSize: '14px',
+  fontSize: '12px',
   fontWeight: 500,
   whiteSpace: 'nowrap',
 };
@@ -44,30 +44,29 @@ const selectStyle = {
   color: '#fff',
   border: '1px solid rgba(255, 255, 255, 0.2)',
   borderRadius: '4px',
-  padding: '6px 10px',
-  fontSize: '14px',
+  padding: '4px 8px',
+  fontSize: '12px',
   cursor: 'pointer',
   outline: 'none',
   transition: 'all 0.2s ease',
-  minWidth: '120px',
+  minWidth: '100px',
+  height: '28px',
 };
 
 const syncButtonStyle = {
-  position: 'absolute',
-  top: '10px',
-  left: '10px',
-  zIndex: 20,
   backgroundColor: 'rgba(0, 0, 0, 0.7)',
   color: '#fff',
   border: '1px solid rgba(255, 255, 255, 0.2)',
-  borderRadius: '6px',
-  padding: '8px 16px',
-  fontSize: '14px',
+  borderRadius: '4px',
+  padding: '4px 12px',
+  fontSize: '12px',
   fontWeight: 500,
   cursor: 'pointer',
   outline: 'none',
   transition: 'all 0.2s ease',
   backdropFilter: 'blur(4px)',
+  height: '28px',
+  whiteSpace: 'nowrap',
 };
 
 const SYNC_OFFSET_SECONDS = 10;
@@ -242,46 +241,48 @@ export default function HLSPlayer({ streamUrl, tokenRefreshMethod, abrEnabled = 
 
   return (
     <div style={containerStyle}>
-      <button
-        onClick={handleSync}
-        style={syncButtonStyle}
-        onMouseEnter={(e) => {
-          e.target.style.backgroundColor = 'rgba(0, 0, 0, 0.85)';
-          e.target.style.borderColor = 'rgba(255, 255, 255, 0.3)';
-        }}
-        onMouseLeave={(e) => {
-          e.target.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
-          e.target.style.borderColor = 'rgba(255, 255, 255, 0.2)';
-        }}
-      >
-        Sync
-      </button>
-      {levels.length > 0 && (
-        <div style={qualitySelectorStyle}>
-          <label htmlFor="quality-select" style={labelStyle}>Quality:</label>
-          <select
-            id="quality-select"
-            value={currentLevel}
-            onChange={handleQualityChange}
-            style={selectStyle}
-            onMouseEnter={(e) => {
-              e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.15)';
-              e.target.style.borderColor = 'rgba(255, 255, 255, 0.3)';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
-              e.target.style.borderColor = 'rgba(255, 255, 255, 0.2)';
-            }}
-          >
-            {abrEnabled && <option value={-1}>Auto</option>}
-            {levels.map((level) => (
-              <option key={level.index} value={level.index}>
-                {level.bitrateFormatted}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
+      <div style={qualitySelectorStyle}>
+        <button
+          onClick={handleSync}
+          style={syncButtonStyle}
+          onMouseEnter={(e) => {
+            e.target.style.backgroundColor = 'rgba(0, 0, 0, 0.85)';
+            e.target.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+            e.target.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+          }}
+        >
+          Sync
+        </button>
+        {levels.length > 0 && (
+          <>
+            <label htmlFor="quality-select" style={labelStyle}>Quality:</label>
+            <select
+              id="quality-select"
+              value={currentLevel}
+              onChange={handleQualityChange}
+              style={selectStyle}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.15)';
+                e.target.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+                e.target.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+              }}
+            >
+              {abrEnabled && <option value={-1}>Auto</option>}
+              {levels.map((level) => (
+                <option key={level.index} value={level.index}>
+                  {level.bitrateFormatted}
+                </option>
+              ))}
+            </select>
+          </>
+        )}
+      </div>
       <video
         ref={videoRef}
         style={videoStyle}
