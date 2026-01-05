@@ -25,16 +25,16 @@ const qualitySelectorStyle = {
   zIndex: 20,
   display: 'flex',
   alignItems: 'center',
-  gap: '8px',
+  gap: '6px',
   backgroundColor: 'rgba(0, 0, 0, 0.7)',
-  padding: '8px 12px',
+  padding: '4px 8px',
   borderRadius: '6px',
   backdropFilter: 'blur(4px)',
 };
 
 const labelStyle = {
   color: '#fff',
-  fontSize: '14px',
+  fontSize: '12px',
   fontWeight: 500,
   whiteSpace: 'nowrap',
 };
@@ -44,13 +44,32 @@ const selectStyle = {
   color: '#fff',
   border: '1px solid rgba(255, 255, 255, 0.2)',
   borderRadius: '4px',
-  padding: '6px 10px',
-  fontSize: '14px',
+  padding: '4px 8px',
+  fontSize: '12px',
   cursor: 'pointer',
   outline: 'none',
   transition: 'all 0.2s ease',
-  minWidth: '120px',
+  minWidth: '100px',
+  height: '28px',
 };
+
+const syncButtonStyle = {
+  backgroundColor: 'rgba(0, 0, 0, 0.7)',
+  color: '#fff',
+  border: '1px solid rgba(255, 255, 255, 0.2)',
+  borderRadius: '4px',
+  padding: '4px 12px',
+  fontSize: '12px',
+  fontWeight: 500,
+  cursor: 'pointer',
+  outline: 'none',
+  transition: 'all 0.2s ease',
+  backdropFilter: 'blur(4px)',
+  height: '28px',
+  whiteSpace: 'nowrap',
+};
+
+const SYNC_OFFSET_SECONDS = 10;
 
 export default function HLSPlayer({ streamUrl, tokenRefreshMethod, abrEnabled = true, playlistRefreshThreshold = 15 }) {
   const videoRef = useRef(null);
@@ -195,34 +214,75 @@ export default function HLSPlayer({ streamUrl, tokenRefreshMethod, abrEnabled = 
     }
   };
 
+  const handleSync = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    
+    // Wait for metadata to be loaded to get duration
+    if (video.readyState >= 2) {
+      const duration = video.duration;
+      if (isFinite(duration) && duration > SYNC_OFFSET_SECONDS) {
+        video.currentTime = duration - SYNC_OFFSET_SECONDS;
+        video.play().catch(() => {});
+      }
+    } else {
+      // If metadata not loaded yet, wait for it
+      const onLoadedMetadata = () => {
+        const duration = video.duration;
+        if (isFinite(duration) && duration > SYNC_OFFSET_SECONDS) {
+          video.currentTime = duration - SYNC_OFFSET_SECONDS;
+          video.play().catch(() => {});
+        }
+        video.removeEventListener('loadedmetadata', onLoadedMetadata);
+      };
+      video.addEventListener('loadedmetadata', onLoadedMetadata);
+    }
+  };
+
   return (
     <div style={containerStyle}>
-      {levels.length > 0 && (
-        <div style={qualitySelectorStyle}>
-          <label htmlFor="quality-select" style={labelStyle}>Quality:</label>
-          <select
-            id="quality-select"
-            value={currentLevel}
-            onChange={handleQualityChange}
-            style={selectStyle}
-            onMouseEnter={(e) => {
-              e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.15)';
-              e.target.style.borderColor = 'rgba(255, 255, 255, 0.3)';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
-              e.target.style.borderColor = 'rgba(255, 255, 255, 0.2)';
-            }}
-          >
-            {abrEnabled && <option value={-1}>Auto</option>}
-            {levels.map((level) => (
-              <option key={level.index} value={level.index}>
-                {level.bitrateFormatted}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
+      <div style={qualitySelectorStyle}>
+        <button
+          onClick={handleSync}
+          style={syncButtonStyle}
+          onMouseEnter={(e) => {
+            e.target.style.backgroundColor = 'rgba(0, 0, 0, 0.85)';
+            e.target.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+            e.target.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+          }}
+        >
+          Sync
+        </button>
+        {levels.length > 0 && (
+          <>
+            <label htmlFor="quality-select" style={labelStyle}>Quality:</label>
+            <select
+              id="quality-select"
+              value={currentLevel}
+              onChange={handleQualityChange}
+              style={selectStyle}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.15)';
+                e.target.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+                e.target.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+              }}
+            >
+              {abrEnabled && <option value={-1}>Auto</option>}
+              {levels.map((level) => (
+                <option key={level.index} value={level.index}>
+                  {level.bitrateFormatted}
+                </option>
+              ))}
+            </select>
+          </>
+        )}
+      </div>
       <video
         ref={videoRef}
         style={videoStyle}
