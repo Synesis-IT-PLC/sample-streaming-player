@@ -1,6 +1,17 @@
 # Sample Streaming Player
 
-A React-based HLS (HTTP Live Streaming) video player with token-based authentication and quality selection features.
+HLS (HTTP Live Streaming) video players with token-based authentication and quality selection features. Available in both **React** and **Flutter** implementations.
+
+## Implementations
+
+- **React**: Browser-based HLS player using hls.js
+- **Flutter**: Native mobile HLS player using video_player package
+
+See [CONVERSION_GUIDE.md](./CONVERSION_GUIDE.md) for details on converting between React and Flutter.
+
+---
+
+## React Implementation
 
 ## Features
 
@@ -58,5 +69,28 @@ Update the backend URL and API endpoints in `react/hlsApi.js`:
 ```javascript
 const BACKEND_URL = 'https://your-backend-url.com/api';
 const PLAYLIST_ACCESS_URL = `${BACKEND_URL}/test/access`;
+```
+
+---
+
+## Flutter Implementation
+
+See the [flutter/README.md](./flutter/README.md) for Flutter-specific documentation.
+
+### Quick Start
+
+```bash
+cd flutter
+flutter pub get
+flutter run
+```
+
+### Configuration
+
+Update the backend URL in `flutter/lib/hls_api.dart`:
+
+```dart
+const String backendUrl = 'https://your-backend-url.com/api';
+const String playlistAccessUrl = '$backendUrl/test/access';
 ```
 
