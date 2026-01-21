@@ -16,9 +16,9 @@ A Flutter-based HLS (HTTP Live Streaming) video player with token-based authenti
 flutter/
 ├── lib/
 │   ├── main.dart                 # Main app entry point
-│   ├── hls_api.dart              # Token refresh API configuration and utilities
+│   ├── hls_api.dart              # Token refresh callback interface and legacy utilities
 │   ├── hls_player.dart           # Main video player widget
-│   └── hls_player_example.dart   # Example wrapper widget demonstrating usage
+│   └── hls_player_example.dart   # Example wrapper widget demonstrating usage (legacy pattern)
 ├── pubspec.yaml                  # Flutter dependencies
 └── README.md                     # This file
 ```
@@ -44,18 +44,16 @@ dependencies:
    flutter pub get
    ```
 
-3. **Update backend configuration** in `lib/hls_api.dart`:
-   ```dart
-   const String backendUrl = 'https://your-backend-url.com/api';
-   const String playlistAccessUrl = '$backendUrl/test/access';
-   ```
-
-4. **Run the app**:
+3. **Run the app**:
    ```bash
    flutter run
    ```
 
 ## Usage
+
+### Basic Usage (Legacy Pattern)
+
+For simple testing, you can use the legacy `createTokenRefreshFunction()`:
 
 ```dart
 import 'package:sample_streaming_player/hls_player_example.dart';
@@ -69,6 +67,78 @@ class MyWidget extends StatelessWidget {
   }
 }
 ```
+
+**Note**: The legacy pattern uses hardcoded backend configuration and is deprecated for production use.
+
+### Recommended: Custom Client Auth Implementation
+
+For production use, implement your own `TokenRefreshCallback` with secure API communication:
+
+```dart
+import 'package:sample_streaming_player/hls_player.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
+// Implement your own secure token refresh function
+Future<Map<String, dynamic>> mySecureTokenRefresh() async {
+  // Add your secure API communication logic here
+  final response = await http.post(
+    Uri.parse('https://your-backend.com/api/secure/token'),
+    headers: {
+      'Authorization': 'Bearer ${clientAuthToken}',
+      'X-API-Key': clientApiKey,
+      'Content-Type': 'application/json',
+      // Add any custom headers, signing, etc.
+    },
+    body: jsonEncode({
+      'stream_id': streamId,
+      // Add any client-specific parameters
+    }),
+  );
+  
+  // Handle response validation, error cases, etc.
+  if (response.statusCode == 200) {
+    final data = jsonDecode(response.body);
+    return {
+      'playlistToken': data['token'],
+      'playlistExpiry': data['expiration'],
+    };
+  } else {
+    throw Exception('Token refresh failed: ${response.statusCode}');
+  }
+}
+
+// Use your custom implementation
+class MyWidget extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return HLSPlayer(
+      streamUrl: 'https://example.com/stream.m3u8',
+      tokenRefreshCallback: mySecureTokenRefresh,
+    );
+  }
+}
+```
+
+### Client Auth Interface
+
+The `TokenRefreshCallback` interface is defined in `hls_api.dart`:
+
+```dart
+typedef TokenRefreshCallback = Future<Map<String, dynamic>> Function();
+```
+
+The callback must return a `Future<Map<String, dynamic>>` with:
+- `'playlistToken'` (String): The access token for the playlist
+- `'playlistExpiry'` (int): Unix timestamp in seconds when the token expires
+
+This approach allows clients to:
+- Add authentication headers (OAuth, JWT, API keys)
+- Implement request signing
+- Handle custom error cases
+- Add certificate pinning
+- Control rate limiting
+- Implement any other security requirements
 
 ## Key Differences from React Version
 

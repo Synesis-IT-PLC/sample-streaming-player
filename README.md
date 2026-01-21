@@ -24,10 +24,14 @@ See [CONVERSION_GUIDE.md](./CONVERSION_GUIDE.md) for details on converting betwe
 ## Components
 
 - `HLSPlayer.jsx`: Main video player component with quality selector
-- `HLSPlayerExample.jsx`: Example wrapper component demonstrating usage
-- `hlsApi.js`: Token refresh API configuration and utilities
+- `HLSPlayerExample.jsx`: Example wrapper component demonstrating usage (legacy pattern)
+- `hlsApi.js`: Token refresh callback interface and legacy utilities
 
 ## Usage
+
+### Basic Usage (Legacy Pattern)
+
+For simple testing, you can use the legacy `createTokenRefreshFunction()`:
 
 ```jsx
 import HLSPlayerExample from './react/HLSPlayerExample';
@@ -39,16 +43,76 @@ function App() {
 }
 ```
 
+**Note**: The legacy pattern uses hardcoded backend configuration and is deprecated for production use.
+
+### Recommended: Custom Client Auth Implementation
+
+For production use, implement your own `TokenRefreshCallback` with secure API communication:
+
+```jsx
+import HLSPlayer from './react/HLSPlayer';
+
+// Implement your own secure token refresh function
+const mySecureTokenRefresh = async () => {
+  const response = await fetch('https://your-backend.com/api/secure/token', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${clientAuthToken}`,
+      'X-API-Key': clientApiKey,
+      'Content-Type': 'application/json',
+      // Add any custom headers, signing, etc.
+    },
+    body: JSON.stringify({
+      stream_id: streamId,
+      // Add any client-specific parameters
+    }),
+  });
+  
+  // Handle response validation, error cases, etc.
+  const data = await response.json();
+  return {
+    playlistToken: data.token,
+    playlistExpiry: data.expiration,
+  };
+};
+
+// Use your custom implementation
+function App() {
+  return (
+    <HLSPlayer 
+      streamUrl="https://example.com/stream.m3u8"
+      tokenRefreshMethod={mySecureTokenRefresh}
+    />
+  );
+}
+```
+
+### Client Auth Interface
+
+The `TokenRefreshCallback` interface is defined in `hlsApi.js`. The callback must return a Promise that resolves to:
+- `playlistToken` (string): The access token for the playlist
+- `playlistExpiry` (number): Unix timestamp in seconds when the token expires
+
+This approach allows clients to:
+- Add authentication headers (OAuth, JWT, API keys)
+- Implement request signing
+- Handle custom error cases
+- Add certificate pinning
+- Control rate limiting
+- Implement any other security requirements
+
 ## Props
 
 ### HLSPlayer
 - `streamUrl` (required): URL of the HLS stream playlist (.m3u8)
-- `tokenRefreshMethod` (optional): Function that returns `{ playlistToken, playlistExpiry }`
+- `tokenRefreshMethod` (optional): `TokenRefreshCallback` function that returns `{ playlistToken, playlistExpiry }`. Recommended: Implement your own secure callback. See `hlsApi.js` for interface details.
 - `abrEnabled` (optional): Enable/disable adaptive bitrate (default: `true`)
 - `playlistRefreshThreshold` (optional): Seconds before expiry to refresh token (default: `15`)
 
 ### HLSPlayerExample
 - `streamUrl` (required): URL of the HLS stream playlist (.m3u8)
+
+**Note**: `HLSPlayerExample` uses the legacy `createTokenRefreshFunction()` pattern which is deprecated for production use.
 
 ## Dependencies
 
@@ -60,15 +124,6 @@ function App() {
   "react-dom": "^19.2.3",
   "react-scripts": "5.0.1"
 }
-```
-
-## Configuration
-
-Update the backend URL and API endpoints in `react/hlsApi.js`:
-
-```javascript
-const BACKEND_URL = 'https://your-backend-url.com/api';
-const PLAYLIST_ACCESS_URL = `${BACKEND_URL}/test/access`;
 ```
 
 ---
@@ -85,12 +140,6 @@ flutter pub get
 flutter run
 ```
 
-### Configuration
+### Client Auth Implementation
 
-Update the backend URL in `flutter/lib/hls_api.dart`:
-
-```dart
-const String backendUrl = 'https://your-backend-url.com/api';
-const String playlistAccessUrl = '$backendUrl/test/access';
-```
-
+For production use, implement your own `TokenRefreshCallback`. See [flutter/README.md](./flutter/README.md) for detailed examples and interface documentation.

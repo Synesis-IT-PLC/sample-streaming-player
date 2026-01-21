@@ -52,6 +52,24 @@ const selectStyle = {
   minWidth: '120px',
 };
 
+/**
+ * HLS video player component with token-based authentication support
+ * 
+ * The player supports client-provided authentication through the
+ * `tokenRefreshMethod` parameter. Clients should implement their own
+ * secure API communication logic rather than relying on the SDK's
+ * default implementation.
+ * 
+ * @param {string} streamUrl - URL of the HLS stream playlist (.m3u8)
+ * @param {TokenRefreshCallback} [tokenRefreshMethod] - Token refresh callback
+ *   that returns { playlistToken, playlistExpiry }. Recommended: Implement
+ *   your own callback with secure API communication. See hlsApi.js for
+ *   interface details. If not provided, the player will load the stream
+ *   without authentication.
+ * @param {boolean} [abrEnabled=true] - Enable/disable adaptive bitrate streaming
+ * @param {number} [playlistRefreshThreshold=15] - Seconds before token expiry
+ *   to trigger a refresh
+ */
 export default function HLSPlayer({ streamUrl, tokenRefreshMethod, abrEnabled = true, playlistRefreshThreshold = 15 }) {
   const videoRef = useRef(null);
   const hlsRef = useRef(null);

@@ -1,20 +1,58 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
+import 'hls_api.dart';
 
+/// HLS video player widget with token-based authentication support
+/// 
+/// The player supports client-provided authentication through the
+/// `tokenRefreshCallback` parameter. Clients should implement their own
+/// secure API communication logic rather than relying on the SDK's
+/// default implementation.
 class HLSPlayer extends StatefulWidget {
   final String streamUrl;
-  final Future<Map<String, dynamic>> Function()? tokenRefreshMethod;
+  
+  /// Token refresh callback that returns playlist token and expiry
+  /// 
+  /// **Recommended**: Implement your own callback with secure API communication.
+  /// This allows you to:
+  /// - Add authentication headers (OAuth, JWT, API keys)
+  /// - Implement request signing
+  /// - Handle custom error cases
+  /// - Add certificate pinning
+  /// - Control rate limiting
+  /// 
+  /// The callback should return:
+  /// ```dart
+  /// {
+  ///   'playlistToken': String,  // The access token
+  ///   'playlistExpiry': int,    // Unix timestamp (seconds)
+  /// }
+  /// ```
+  /// 
+  /// See `TokenRefreshCallback` typedef in `hls_api.dart` for interface details.
+  /// 
+  /// If not provided, the player will load the stream without authentication.
+  final TokenRefreshCallback? tokenRefreshCallback;
+  
+  /// Enable/disable adaptive bitrate streaming
   final bool abrEnabled;
+  
+  /// Seconds before token expiry to trigger a refresh
   final int playlistRefreshThreshold;
 
   const HLSPlayer({
     super.key,
     required this.streamUrl,
-    this.tokenRefreshMethod,
+    this.tokenRefreshCallback,
     this.abrEnabled = true,
     this.playlistRefreshThreshold = 15,
   });
+
+  /// Legacy property name - maps to tokenRefreshCallback
+  /// @deprecated Use tokenRefreshCallback instead
+  @Deprecated('Use tokenRefreshCallback instead')
+  TokenRefreshCallback? get tokenRefreshMethod => tokenRefreshCallback;
 
   @override
   State<HLSPlayer> createState() => _HLSPlayerState();
@@ -48,12 +86,13 @@ class _HLSPlayerState extends State<HLSPlayer> {
   }
 
   Future<void> _refreshTokensIfNeeded() async {
-    if (widget.tokenRefreshMethod == null) return;
+    final callback = widget.tokenRefreshCallback;
+    if (callback == null) return;
 
     if (_playlistToken == null || 
         _needsRefresh(_playlistExpiry, widget.playlistRefreshThreshold)) {
       try {
-        final result = await widget.tokenRefreshMethod!();
+        final result = await callback();
         setState(() {
           _playlistToken = result['playlistToken'] as String?;
           _playlistExpiry = result['playlistExpiry'] as int? ?? 0;
@@ -69,7 +108,7 @@ class _HLSPlayerState extends State<HLSPlayer> {
     String url = widget.streamUrl;
 
     // Add token to URL if available
-    if (widget.tokenRefreshMethod != null) {
+    if (widget.tokenRefreshCallback != null) {
       await _refreshTokensIfNeeded();
       if (_playlistToken != null && _playlistExpiry > 0) {
         final uri = Uri.parse(url);
@@ -108,7 +147,7 @@ class _HLSPlayerState extends State<HLSPlayer> {
   }
 
   void _startTokenRefreshTimer() {
-    if (widget.tokenRefreshMethod == null) return;
+    if (widget.tokenRefreshCallback == null) return;
 
     _tokenRefreshTimer = Timer.periodic(
       const Duration(seconds: 5),
