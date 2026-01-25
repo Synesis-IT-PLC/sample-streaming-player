@@ -1,4 +1,4 @@
-# Sample Streaming Player
+# Convay HLS Player for React 
 
 A React-based HLS (HTTP Live Streaming) video player with token-based authentication and quality selection features.
 
